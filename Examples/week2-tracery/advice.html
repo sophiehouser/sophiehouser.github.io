@@ -1,0 +1,20 @@
+<script src="../lib/tracery.js"></script>
+<script src="../lib/mousetrap.min.js"></script>
+<script src="../lib/jquery-1.11.1.min.js"></script>
+<h1>Text will go here</h1>
+<button onclick="generate()">Generate</button>
+<script>
+var grammarObj = {
+	"S": ["#Exclimation#! My #Object# #Verb##Punctuation# #Request##Punctuation#"],
+	"Exclimation": ["Help", "Shoot", "Drats", "Fuck", "Uh Oh", "Holy Moly", "Awww Man", "Not Again", "Ouch"],
+	"Object": ["cat", "neighbor's dog", "friend", "special friend", "mother-in-law", "foot", "lover", "car", "s/o", "ego", "house"],
+	"Verb": ["caught on fire", "fell over", "is depressed", "can't talk", "doesn't like me", "is experiencing existential dread", "is filled with doubt", "is not being nice to me", "doesn't respect my opinion", "won't stop dancing", "voted for TRUMP", "is stuck in a tree", "is too tiny", "has an ugly laugh"],
+	"Punctuation": ["...", "!!!", "~~~", ",,,,,", "!", ",", "???", ".", "?", ".", ".", ".", "."],
+	"Request": ["Call 911", "What should I do?", "Send help", "SOS", "Please advise", "Tell everyone", "Sincerely lost", "Best course of action?", "AHHHHHHH"]
+	}
+var grammar = tracery.createGrammar(grammarObj)
+function generate(){
+	var t = grammar.flatten("#S#");
+	$('h1').text(t);
+}
+</script>

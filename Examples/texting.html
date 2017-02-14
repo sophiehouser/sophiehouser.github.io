@@ -1,0 +1,120 @@
+<script src="../lib/tracery.js"></script>
+<script src="../lib/mousetrap.min.js"></script>
+<script src="../lib/jquery-1.11.1.min.js"></script>
+<h1 align="center"> Got a lot of versions of me. 21st century mes (yea they text). Sometimes wonder which one's the most me. Where they overlap, do they combine. Got a lot of mes.</h1>
+<div align="center"><button onclick="generate()">Watch mes text other mes!</button></div>
+<div class="left-half person-one"><h2 id = "personOne"></h2></div>
+<div class="left-half"><h2 id = "responseOne", style="color:#069"></h2></div>
+<div class="right-half"><h2 id = "responseTwo", style="color: red"></h2></div>
+<div class="left-half"><h2 id = "responseThree", style="color:#069"></h2></div>
+<div class="right-half"><h2 id = "responseFour", style="color: red"></h2></div>
+<div class="left-half"><h2 id = "responseFive",  style="color:#069"></h2></div>
+<div class="right-half"><h2 id = "responseSix",  style="color: red"></h2></div>
+
+
+<style type="text/css">
+	.person-one {
+		color: red;
+		vertical-align: text-bottom;
+	}
+
+	.person-two {
+		color: blue;
+	}
+	.left-half {
+		vertical-align: text-top
+		text-align: left;
+	  float: left;
+	  left: 0px;
+	  width: 100%;
+	}
+
+	.right-half {
+		text-align: right;
+	  float: right;
+	  width: 100%
+	}
+</style>
+
+<script>
+
+var meOne;
+var meTwo;
+var meList = ["Mom-Me", "Best-Friend-Me", "Girlfriend-Me"];
+
+var momMeOptions = ["i want soup!!", "sounds good i'll leave the main room when you get off the subway", "i'm in an obsessive loop where i can't stop rereading it and so i can't do anything else", "can you read a short piece of writing i wrote today before we talk?", "ok let's talk at 10", "also i might go to mexico city with my friends over spring break", "i'll tell you more on the phone", "wanna talk later about life?", "i think i might drop welfare states and not do the essay, i really liked the class today, do you think that's a good idea", "taking quick bike ride now cause it's so nice", "i'm gonna work on it after class, do you think the fixes will be easy", "it all looks good since we're not exclusive and their commission is industry standard", "should i just say yes or do i need to put her in touch with the speakers beareu lady", "could we talk quickly tonight i need some class help", "dana and i are going to become bffs and you're gonna be jealous but then you'll get really close with clem to get back at me", "yes one sec", "i don't think i can really talk tonight i'm so sorry", "that's a funny joke, you did good ma", "but should i wait to follow up til tomorrow morning?"];
+
+var friendMeOptions = ["feigning for cookie today", "also my underwear is chaffing against my butt today and it sucks", "and there's no more soy milk", "dipping in tea made ivy room cookie so much better", "that was such a complicated message to send in a group chat so i just didn't deal with it", "trampolining would be very fun, was going to get dinner with mauricio but he also seemed interested in trampolining. i haven't started 22 hw that's due wednesday and hours are in the evening tomorrow so may not have time for trampolining but maybe if the hw goes quickly and i can get some done tonight", "julia wants to get dinner with us", "yassss i am dancing up a storm", "still at coffee exchange?", "it was so weird", "my phone just stopped working", "oh my god r u srs thoughts?", "trying to pee!!! but bathroom has line", "i don't think there will be time for an afternoon adventure", "what time did i go to sleep, 10?", "nyyteee", "i love being naked with another naked person", "call me VP LADY from now on", "you could say something like 'Sounds great! Looking forward to talking VP LADY and to being in touch with Emily', like acknowledge you recieved it and are excited to talk", "i know get here quick i want you to be next to me!!", "we're so similar but a little different", "make the poopy and do that later", "i'm wearing that vest you don't like but i think i made it fashionable today", "noiiicceeee", "yay so happy to hear that!", "we will NOT come into the room", "we won't and i totally understand and i love you!", "i'm so sorry", "maybe it's like attracted but not sexually"];
+
+var girlFriendMeOptions = ["if you wanna go to sleep we could have sleepover tomorrow", "i'm having a really good time making this and messing around", "you left a folder here", "i don't think i could spend 45 minutes thinking about anything without involving myself and my experiences in some way", "i feel less overwhelmed now that i realize i can write the presentation and workship next weekend when i'm home", "bugattis are everywhere except in my garage", "are you going at 3 or 'nah'?", "where are you", "will probably be back on campus at midnight", "send pic", "condom? flavored? fun!", "heard what? what? what? what what wha aaaaa", "what's up? what's your plan? what you up to?", "tbhonest i'm tryna get some work done, you can come whenever", "are you sleeping here tonight or wut", "you could sleepover but i also have a lot of work", "i can't believe you just said hey hey, that's embarassing for you", "walking back? me? hmmm, good question.", "lemme know when you're here", "possibly", "i think you should go with the reservoir dogs but i'm not in your body", "MY WHOLE LIFE IS FALLING A PART", "ohhh the one you've been reading", "we were all yelling at you in unison for your poor response to the snapchat with my exposed boob", "this is my ticket to the walls of moma", "i'm in my groutfit in my bed reading about art", "fuck you dad!", "what does that mean", "i might go to sleep soon though", "what's your plan?", "i just got home from dinner, i want to get more work done and see clem but she's at dinner and not sure what's up and also don't really want to go out and am now lying on the couch and am starting to feel tired", "coming down", "common room is back on the table if louis is sleeping", "we could hang out in the common room", "we could go to leung or that really pretty place", "here's a not great picture of me for you"];
+
+var grammarObj = {
+	"S":["#Opener#"],
+	"Opener": ["Prime example of ", "Here you have ", "Notice ", "And there you go, ", "Look,"],
+	"K":["#Closer#"],
+	"Closer":["hanging out with tension over the iphone", "trying to understand each other digitally", "communicating sort of through the icloud", "'j chillen' painfully with our cellular devices"]
+	}
+var grammar = tracery.createGrammar(grammarObj)
+
+function choseMeVersions(){
+	var intOne = Math.floor(Math.random() * (meList.length));
+	while (intOne == meList.length){
+		intOne = Math.floor(Math.random() * (meList.length));
+	}
+	console.log("intOne" + intOne);
+	console.log(intOne);
+	meOne = meList[intOne];
+	console.log("meOne");
+	console.log(meOne);
+	var intTwo = Math.floor(Math.random() * (meList.length));
+	while ((intTwo == intOne) || (intTwo == meList.length)) {
+		intTwo = Math.floor(Math.random() * (meList.length));
+	}
+	console.log("intTwo");
+	console.log(intTwo);
+	meTwo = meList[intTwo];
+	console.log("meTwo");
+	console.log(meTwo);
+}
+
+function restoreLists(){
+	momMeOptions = ["i want soup!!", "sounds good i'll leave the main room when you get off the subway", "i'm in an obsessive loop where i can't stop rereading it and so i can't do anything else", "can you read a short piece of writing i wrote today before we talk?", "ok let's talk at 10", "also i might go to mexico city with my friends over spring break", "i'll tell you more on the phone", "wanna talk later about life?", "i think i might drop welfare states and not do the essay, i really liked the class today, do you think that's a good idea", "taking quick bike ride now cause it's so nice", "i'm gonna work on it after class, do you think the fixes will be easy", "it all looks good since we're not exclusive and their commission is industry standard", "should i just say yes or do i need to put her in touch with the speakers beareu lady", "could we talk quickly tonight i need some class help", "dana and i are going to become bffs and you're gonna be jealous but then you'll get really close with clem to get back at me", "yes one sec", "i don't think i can really talk tonight i'm so sorry", "that's a funny joke, you did good ma", "but should i wait to follow up til tomorrow morning?"];
+
+	friendMeOptions = ["feigning for cookie today", "also my underwear is chaffing against my butt today and it sucks", "and there's no more soy milk", "dipping in tea made ivy room cookie so much better", "that was such a complicated message to send in a group chat so i just didn't deal with it", "trampolining would be very fun, was going to get dinner with mauricio but he also seemed interested in trampolining. i haven't started 22 hw that's due wednesday and hours are in the evening tomorrow so may not have time for trampolining but maybe if the hw goes quickly and i can get some done tonight", "julia wants to get dinner with us", "yassss i am dancing up a storm", "still at coffee exchange?", "it was so weird", "my phone just stopped working", "oh my god r u srs thoughts?", "trying to pee!!! but bathroom has line", "i don't think there will be time for an afternoon adventure", "what time did i go to sleep, 10?", "nyyteee", "i love being naked with another naked person", "call me VP LADY from now on", "you could say something like 'Sounds great! Looking forward to talking VP LADY and to being in touch with Emily', like acknowledge you recieved it and are excited to talk", "i know get here quick i want you to be next to me!!", "we're so similar but a little different", "make the poopy and do that later", "i'm wearing that vest you don't like but i think i made it fashionable today", "noiiicceeee", "yay so happy to hear that!", "we will NOT come into the room", "we won't and i totally understand and i love you!", "i'm so sorry", "maybe it's like attracted but not sexually"];
+
+	girlFriendMeOptions = ["if you wanna go to sleep we could have sleepover tomorrow", "i'm having a really good time making this and messing around", "you left a folder here", "i don't think i could spend 45 minutes thinking about anything without involving myself and my experiences in some way", "i feel less overwhelmed now that i realize i can write the presentation and workship next weekend when i'm home", "bugattis are everywhere except in my garage", "are you going at 3 or 'nah'?", "where are you", "will probably be back on campus at midnight", "send pic", "condom? flavored? fun!", "heard what? what? what? what what wha aaaaa", "what's up? what's your plan? what you up to?", "tbhonest i'm tryna get some work done, you can come whenever", "are you sleeping here tonight or wut", "you could sleepover but i also have a lot of work", "i can't believe you just said hey hey, that's embarassing for you", "walking back? me? hmmm, good question.", "lemme know when you're here", "possibly", "i think you should go with the reservoir dogs but i'm not in your body", "MY WHOLE LIFE IS FALLING A PART", "ohhh the one you've been reading", "we were all yelling at you in unison for your poor response to the snapchat with my exposed boob", "this is my ticke tto the walls of moma", "i'm in my groutfit in my bed reading about art", "fuck you dad!", "what does that mean", "i might go to sleep soon though", "what's your plan?", "i just got home from dinner, i want to get more work done and see clem but she's at dinner and not sure what's up and also don't really want to go out and am now lying on the couch and am starting to feel tired", "coming down", "common room is back on the table if louis is sleeping", "we could hang out in the common room", "we could go to leung or that really pretty place", "here's a not great picture of me for you"];
+
+}
+
+function choseText(meVersion){
+	var listIndex;
+	var text;
+	if (meVersion == "Mom-Me"){
+		listIndex = Math.floor(Math.random() * momMeOptions.length);
+		text = momMeOptions[listIndex];
+		momMeOptions.splice(listIndex, 1);
+	} else if (meVersion == "Best-Friend-Me"){
+		listIndex = Math.floor(Math.random() * friendMeOptions.length);
+		text = friendMeOptions[listIndex];
+		friendMeOptions.splice(listIndex, 1);
+	} else if (meVersion == "Girlfriend-Me"){
+		listIndex = Math.floor(Math.random() * girlFriendMeOptions.length);
+		text = girlFriendMeOptions[listIndex];
+		girlFriendMeOptions.splice(listIndex, 1);
+	}
+	return text;
+}
+
+function generate(){
+	choseMeVersions();
+	var title = grammar.flatten("#S# " + meOne + " and " + meTwo + " #K#" + "...");
+	$('h1').text(title);
+	$(document.getElementById("responseOne")).text(meOne + ": " + choseText(meOne));
+	$(document.getElementById("responseTwo")).text(choseText(meTwo) + " :" + meTwo);
+	$(document.getElementById("responseThree")).text(meOne + ": " + choseText(meOne));
+	$(document.getElementById("responseFour")).text(choseText(meTwo) + " :" + meTwo);
+	$(document.getElementById("responseFive")).text(meOne + ": " + choseText(meOne));
+	$(document.getElementById("responseSix")).text(choseText(meTwo) + " :" + meTwo);
+	restoreLists();
+}
+</script>
