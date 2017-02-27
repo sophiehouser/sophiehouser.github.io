@@ -1,0 +1,61 @@
+<script src="../lib/jquery-1.11.1.min.js"></script>
+<script src="../lib/markov.js"></script>
+<script>
+var txt;
+var counter = 0;
+var markov = new MarkovGenerator(4,1500)
+$.get("sorry.txt", function(text) {
+     markov.feed(text);
+});
+function generate(){
+	var t = markov.generate()
+	counter++;
+	if (counter == 5){
+		$('h1').text("It's not that I don't want to.");
+	} else if (counter == 9){
+		$('h1').text("It's not that I don't try to.");
+	} else if(counter == 15) {
+		$('h1').text("But whimpering on the train is more than I've done for anyone else.");
+		counter = 0;
+	}else {
+		$('h1').text(t);
+	}
+}
+
+</script>
+
+<style>
+
+#btn {
+	top:50%; 
+    left:50%;
+    border: none;
+    background-color:#85ffe2;
+    color:#fb727e;
+    border-color: white;
+    border-width: 4px;
+    border-radius: 4px;
+    border: 2px solid #fb727e;
+}
+
+#text {
+	top:50%; 
+    left:50%;
+	text-align: center;
+	color: #fb727e;
+
+}
+
+#body{
+	background-color:#d1fff4;
+}
+
+
+
+</style>
+
+<body id="body"> </body>
+<div style="text-align:center"> 
+<button id="btn" align="center" onclick="generate()">touch me enough i'll tell you why</button>
+</div>
+<h1 id="text"></h1>

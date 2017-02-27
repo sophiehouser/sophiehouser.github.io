@@ -1,0 +1,64 @@
+<script src="../lib/jquery-1.11.1.min.js"></script>
+<script src="../lib/markov.js"></script>
+<script>
+var txt;
+var markov = new MarkovGeneratorWord(2,40)
+$.get("sylviaPlathJournal.txt", function(text) {
+     markov.feed(text);
+});
+$.get("goaskalice.txt", function(text) {
+     markov.feed(text);
+});
+function generate(){
+	document.getElementById("journal").innerHTML = "";
+	var t = markov.generate()
+	var journalList = t.split(".")
+	for (var i = 0; i < journalList.length; i++){
+		console.log(journalList[i]);
+		$(document.getElementById("journal")).append(journalList[i]);
+		$(document.getElementById("journal")).append("<br>");
+	}
+}
+</script>
+
+<style>
+
+html { 
+  background: url("flowerCircle.png") no-repeat center center; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+#journal {
+width: 50%; height: 100%;
+top: 50%; left: 25%;
+position: absolute;
+z-index: 1;
+text-align: center;
+color: #fb727e;
+font-family: 'Embroidery'; /*a name to be used later*/
+    src: url('Embroidery.ttf'); /*URL to font*/
+
+}
+
+
+@font-face {
+    font-family: 'Embroidery'; /*a name to be used later*/
+    src: url('Embroidery.ttf'); /*URL to font*/
+}
+
+</style>
+
+
+
+<div>
+	<button id="btn" onclick="generate()">make a pillow</button>
+</div>
+
+<p id="journal">
+</p>
+
+
+
