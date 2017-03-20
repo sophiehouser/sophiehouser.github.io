@@ -1,0 +1,81 @@
+<html>
+  <head>
+    <script src="../lib/p5.min.js"></script>
+    <script src="../lib/p5.play.js"></script>
+    <script src="../lib/p5.sound.js"></script>
+    <script src="../lib/p5.Font.js"></script>
+   
+<script>
+
+var thingTwo;
+var buttonImg;
+var spr;
+var clickShow;
+var babyCry;
+var volume = 1;
+var speed = 0;
+var rodchenko;
+
+function preload(){
+	//var thing = new Animation("star0001.png", "star0002.png");
+	thingTwo = loadAnimation("birth0001.png", "birth0023.png");
+	babyCry = loadSound("babyCry.mp3");
+	buttonImg = loadImage("clickButton.png");
+	//rodchenko = loadFont("Rodchenko.tff");
+}
+
+function setup() {
+	createCanvas(windowWidth,windowHeight);
+	textSize(36);
+	//textFont(rodchenko);
+	spr = createSprite(windowWidth/13, windowHeight/9);
+	spr.width = 10;
+	spr.height = 10;
+	spr.position.x = windowWidth/2;
+	spr.position.y = windowHeight/2;
+	spr.addAnimation("default", thingTwo);
+
+	clickShow = createSprite(windowWidth/random(3, 8), windowHeight/random(2, 3));
+	clickShow.addImage("buttonImage", buttonImg);
+	babyCry.play();
+}
+
+function draw(){
+	background(0);
+	fill(1, 163, 176);
+	text("And in that moment, I swear we were infinite...", windowWidth/5, windowHeight/5);
+	spr.width = 10;
+	spr.height = 10;
+	drawSprites();
+}
+
+function mousePressed(){
+	// if click sprite is first thing clicked
+	if (clickShow.mouseIsPressed){
+		//make invisible
+		clickShow.visible = false;
+	}
+	// if click sprite is not first thing clicked
+	if(clickShow.visible == true){
+		//make invisible
+		clickShow.visible = false;
+	}
+	//make new sprite at mouse position
+  var newSprite;
+  newSprite = createSprite(width/20, height/20);
+  newSprite.addAnimation("default", thingTwo);
+  newSprite.position.x = mouseX;
+  newSprite.position.y = mouseY;
+  volume = volume + 2;
+  speed = speed + .25;
+  babyCry.amp(volume);
+  babyCry.rate(speed);
+}
+
+
+
+</script>
+  </head>
+  <body>
+  </body>
+</html>
