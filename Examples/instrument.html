@@ -3,7 +3,6 @@
     <script src="lib/p5.min.js"></script>
     <script src="lib/p5.play.js"></script>
     <script src="lib/p5.sound.js"></script>
-    <script src="lib/p5.Font.js"></script>
    
 <script>
 
@@ -14,20 +13,16 @@ var clickShow;
 var babyCry;
 var volume = 1;
 var speed = 0;
-var rodchenko;
 
 function preload(){
-	//var thing = new Animation("star0001.png", "star0002.png");
 	thingTwo = loadAnimation("birth0001.png", "birth0023.png");
 	babyCry = loadSound("babyCry.mp3");
 	buttonImg = loadImage("clickButton.png");
-	//rodchenko = loadFont("Rodchenko.tff");
 }
 
 function setup() {
 	createCanvas(windowWidth,windowHeight);
 	textSize(36);
-	//textFont(rodchenko);
 	spr = createSprite(windowWidth/13, windowHeight/9);
 	spr.width = 10;
 	spr.height = 10;
