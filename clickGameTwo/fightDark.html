@@ -1,0 +1,102 @@
+<html>
+  <head>
+    <script src="../lib/p5.min.js"></script>
+    <script src="../lib/p5.play.js"></script>
+    <script src="../lib/p5.sound.js"></script>
+
+<script>
+
+var contents = "";
+var canvasWidth = 600;
+var canvasHeight = 1200;
+var textSizeCustom = 25;
+var textBoxHeight = (canvasHeight - textSizeCustom);
+var charCounter = 0;
+var charMax = canvasWidth/textSizeCustom * 1.7;
+var lines = 0;
+//var charMax = 5
+var slimeWallImg;
+var slimeSprite;
+var slimeHeight = 200;
+var slimeAccel = 0;
+
+gameState = 1;
+
+function preload(){
+	slimeWallImg = loadAnimation("slimeWall0001.png", "slimeWall0004.png");
+}
+
+function setup() {
+	createCanvas(canvasWidth,canvasHeight);
+	background(50);
+	slimeSprite = createSprite(300, slimeHeight, 600, 1200);
+	slimeSprite.addAnimation("gif", slimeWallImg);
+}
+
+function draw() {
+	if (gameState == 1) {
+		background(50);
+		
+	  slimeSprite.position.y = slimeHeight;
+	  fill(255);
+	  textSize(textSizeCustom);
+	  text(contents, canvasWidth/14, textBoxHeight);
+	  // goes to next line
+	  if (charCounter >= charMax){
+	  	contents = contents + "\n";
+	  	// while (textBoxHeight >= (textBoxHeight - textSize)){
+	  	// 	print(textBoxHeight);
+	  	// 	textBoxHeight--;
+	  	// }
+	  	textBoxHeight = textBoxHeight - textSizeCustom;
+	  	slimeHeight = slimeHeight - (textSizeCustom*3) - slimeAccel*10;
+	  	charCounter = 0;
+	  	lines++;
+
+	  }
+	  drawSprites();
+	  
+	  if ((slimeHeight + slimeSprite.height/2) > (canvasHeight + canvasHeight/10 + 30)){
+	  	gameState = 2;
+	  } else {
+	  	  slimeHeight = slimeHeight + slimeAccel;
+	  }
+	
+	  // if accelerating but just made a new line
+	  if (slimeAccel > 0 && charCounter == 0) {
+	  	// decelerate
+	  	slimeAccel = slimeAccel - .005
+	  } else {
+	  	slimeAccel = slimeAccel + .001;
+	  }
+
+	  //intructions 
+	  if (contents == ""){
+	  		textSize(50);
+	  		fill(255);
+	  		var slimeBabe = "all of it"; 
+	  		text(" \tSTART TYPING BABE!!! \n \n \t SAY ANYTHING TO \n \t \t KEEP " + slimeBabe + "\n \t\t\t\t AWAY!! \n \n\t\t\t\t\t FAST!! \n\t\t\t\t CMON!!!", 0, canvasHeight/6);
+		}
+
+	} 
+// END GAME
+	else if (gameState == 2) {
+		fill(255);
+		textSize(75);
+		text("THE END.", canvasWidth/10, canvasHeight/2);
+		textSize(30);
+		text("you did " + lines + " thoughts before you let \n ALL OF IT \n come down", canvasWidth/10, canvasHeight/2 + 100);
+	}
+  
+
+}
+function keyTyped() {
+  contents += key;
+  charCounter++;
+}
+
+</script>
+  </head>
+  <body style="margin: 0px">
+  </body>
+</html>
