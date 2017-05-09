@@ -1,0 +1,1048 @@
+<html>
+  <head>
+    <script src="../lib/p5.min.js"></script>
+    <script src="../lib/p5.play.js"></script>
+    <script src="../lib/p5.sound.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Ramaraja" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet">
+   
+
+<script>
+/*
+* LOGIC: Each image corrisponds to a page. 0 is the intro, 2 is the vibrator, 3 is the party, 4 is spring weekend. prompter() is called when the user preses enter on the intro screen and each time they sucessfully answer a prompt or their time is up. Prompter calls the corrisponding [page]Seq() function depending on the page number. [page]Seq() shows the correct prompt on the screen depending on the prompt number. Each time the user clicks the screen, coorChecker() calls the corresponding coordinate checking function, [page]CoorCheck(), depending on the page number. Depending on the prompt number, [page]CoorChecker() checks whether that click was sucessful. If it was it flashes "sucess", adds one to the prompt counter and calls prompter() with the updated prompt counter, if not it flashes "fail". The draw loops keeps track of time. When 30 seconds is up, the prompt counter is also advanced and prompter() is called again. keyReleased() is called when the user pressed Enter. This checks whether the prompt sequence is done for a certain page and if so it advances the page on the canvas, and resets the prompt counter and calls prompter(). The next time the user clicks, the coorChecker() will direct to the next [page]CoorCheck() function.
+*
+* VISUAL: There are two sprites. The backgroundImageSprite and resultSprite. backgroundImageSprite contains all the image animations. It's location makes each animation's top left corner at (0, 159). 159 is the pixel height of the score/time/prompt bar on the top of the screen. On each draw cycle one black rectangle is drawn over the score text and the time text, then these texts are redrawn. The backgroundImageSprite's frame also changes. Also checks if the resultSprite has been visible for a few seconds. If so it makes the resultSprite invisible and hides it by drawing a black rectangle over it.
+
+The resultSprite is updated each time the user clicks the screen. [page]CoorCheck() calls clickAttempt() a helper function which checks if the click was sucessful or not. Depending on sucess, clickAttempt() changes resultSprite's image to either "fail" or "sucess".
+*
+*/
+
+var clicked = 0;
+
+// 0 - intro; 2 - vibrator; 3 - at party;  4 - spring weekend
+var page = 0;
+// 0 at beginning of game; 1 at beginning of level
+var prompt = 0;
+
+var score = 0;
+var scoreAdd = 0;
+var startMilli = 0;
+
+//shows the results of user's click attempt
+var resultSprite;
+// resultSprite img options
+var sucessImg;
+var failImg;
+var timeUpImg;
+var blackSquareImg
+
+// sprite for level image
+var backgroundSprite;
+// backgroundSprite anim options
+var vibratorAnim;
+var atPartyAnim;
+var springWeekendAnim;
+var backgroundImgTwo;
+
+// pixels of top padding so prompt can be updated and animation can go
+var padding = 159;
+
+// starts on -1; 0 - fail; 1 - sucess; 2 - time up
+var clickSucess = -1;
+
+// to keep track of times around draw loop to hide resultSprite correctly
+var drawCounter = 0;
+var saveDrawCounter = 0;
+
+
+function preload(){
+	springWeekendAnim = loadAnimation("whatsGoingOnShort0000.png", "whatsGoingOnShort0002.png");
+	atPartyAnim = loadAnimation("atParty0000.png", "atParty0002.png");
+	backgroundImgTwo = loadImage("tal2.png");
+	vibratorAnim = loadAnimation("vibrator0000.png", "vibrator0002.png");
+	
+	sucessImg = loadImage("sucess0000.png");
+	failImg = loadImage("fail0000.png");
+	timeUpImg = loadImage("timeUp0000.png");
+	blackSquareImg = loadImage("fail0001.png");
+
+}
+
+function setup() {
+	createCanvas(1080*2, 1244*2);
+	background(0);
+	//resultSprite = createSprite(backgroundImg.width - backgroundImg.width/8, 50, sucessImg.width, sucessImg.height);
+	resultSprite = createSprite(945, 50, sucessImg.width, sucessImg.height);
+	resultSprite.addImage("sucess", sucessImg);
+	resultSprite.addImage("fail", failImg);
+	resultSprite.addImage("timeUp", timeUpImg);
+	resultSprite.addImage("blackSquare", blackSquareImg)
+	resultSprite.visible = false;
+
+	backgroundSprite = createSprite(0, 0, springWeekendAnim.getWidth(), springWeekendAnim.getHeight());
+	backgroundSprite.addAnimation("springWeekend", springWeekendAnim);
+	backgroundSprite.addAnimation("vibrator", vibratorAnim);
+	backgroundSprite.addAnimation("atParty", atPartyAnim);
+	backgroundSprite.frameDelay = 10;
+	//backgroundSprite.visible = false;
+
+	intro();
+	
+	
+	//babyCry.play();
+}
+
+function draw(){
+	// if on game page
+	if (page >= 2){
+		//var timer = millis();
+		drawSprites();
+		if (clickSucess == 0 || clickSucess == 1 || clickSucess == 2){
+			if (saveDrawCounter == 0){
+				saveDrawCounter = drawCounter;
+			} else if (drawCounter - saveDrawCounter == 50){
+				resultSprite.visible = false;
+				rect(springWeekendAnim.getWidth() - springWeekendAnim.getWidth()/6.5, 20, sucessImg.width + 10, sucessImg.height + 10);
+			} 
+		}
+
+		// black rectangle behind score and time
+		fill(0);
+		rect(0, 0, 225, 100);
+		fill(1, 163, 176);
+		textSize(40);
+		text("Score: " + score, 20, 45);
+		scoreAdd = floor((millis() - startMilli)/1000);
+		// scoreAdd is saved in case it reaches 30 and is updated before the score is
+		var scoreAddSaver = scoreAdd;
+		if (scoreAdd >= 30){
+			clickAttempt(2, prompt, page);
+		}
+		textSize(40);
+		text("Time: " + scoreAddSaver, 20, 95);
+		drawCounter++;
+	}
+}
+
+function showGame(){
+	background(0);
+	page = 2;
+	backgroundSprite.position.x = vibratorAnim.getWidth()/2;
+	backgroundSprite.position.y = vibratorAnim.getHeight()/2 + padding;
+	backgroundSprite.changeImage("vibrator");
+}
+
+// update the prompt string
+function updatePrompt(promptString){
+	// draw black box to erase old prompt
+	fill(0);
+	rect(225, 0, springWeekendAnim.getWidth() - 225, 150);
+	// write new prompt
+	fill(1, 163, 176);
+	text(promptString, 350, 90);
+	// for some reason w/o this line rectangle coverup turns turquoise
+	fill(0)
+}
+
+function springWeekendSeq(promptNum){
+	if (promptNum == 1){
+		updatePrompt("Click on the bear statue");
+	} else if (promptNum == 2) {
+		updatePrompt("Click on the police man");
+	} else if (promptNum == 3) {
+		updatePrompt("Click on a bare tree");
+	} else if (promptNum == 4) {
+		updatePrompt("Click on the white cap");
+	} else if (promptNum == 5) {
+		updatePrompt("Click on the hand saying 'I miss you'");
+	} else if (promptNum == 6) {
+		updatePrompt("Click on the hand saying \n 'Do you miss me too?'");
+	} else if (promptNum == 7) {
+		updatePrompt("Click on the oblivious face");
+	} else if (promptNum == 8) {
+		updatePrompt("Click on the dismay");
+	} else if (promptNum == 9) {
+		updatePrompt("Click on the 'Why didnt you say this \n three months ago?' eyes");
+	} else if (promptNum == 10) {
+		updatePrompt("Click on the 'I hate you and I miss you' mouth");
+	} else if (promptNum == 11) {
+		updatePrompt("Click on the crying person");
+	} else if (promptNum == 12) {
+		updatePrompt("Click on the oblivious one");
+	} else if (promptNum == 13) {
+		updatePrompt("Click on the not oblivious one");
+	} else if (promptNum == 14) {
+		updatePrompt("Click on the 'oh no' mouth");
+	} else if (promptNum == 15) {
+		updatePrompt("Click on the 'they're going to regret this \n interaction tomorrow' hand");
+	} else if (promptNum == 16) {
+		updatePrompt("Click on the guy on his phone");
+	} else if (promptNum == 17) {
+		updatePrompt("Click on the bare legs");
+	} else if (promptNum == 18) {
+		updatePrompt("Click on the fun white party tent");
+	} else if (promptNum == 19) {
+		updatePrompt("Click on the passage of time cause \n three months is awhile");
+	} else if (promptNum == 20) {
+		updatePrompt("Click on the 'I miss you and I hate that I still do' \n face cause three months wasnt enough");
+	} else if (promptNum == 21) {
+		updatePrompt("Click on the tears for what they cant go back to");
+	}else if (promptNum == 22) {
+		updatePrompt("Click on the 18 year old");
+	} else if (promptNum == 23) {
+		updatePrompt("Click on the freshman in college");
+	} else if (promptNum == 24) {
+		updatePrompt("Click on the most sexually experienced");
+	} else if (promptNum == 25) {
+		updatePrompt("Click on the least");
+	} else if (promptNum == 26) {
+		updatePrompt("Click on the owner of the three \n month old blue 18+ item");
+	} else if (promptNum == 27) {
+		updatePrompt("Press Enter to move on");
+	} 
+}
+
+function springWeekendCoorCheck(promptNum){
+	//bear statue
+	if(promptNum == 1){
+		if(mouseY > 211 && mouseY < 270 && mouseX > 573 && mouseX < 611) {
+		// bear statue touched
+			clickAttempt(1, prompt, page);
+		} 
+		// not touched
+		else {
+			clickAttempt(0, prompt, page);
+		}
+	} 
+	// police man
+	else if(promptNum == 2){
+		if(mouseY > 278 && mouseY < 339 && mouseX > 278 && mouseX < 311) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// bare tree
+	else if(promptNum == 3){
+		if((mouseY > 161 && mouseY < 329 && mouseX > 370 && mouseX < 473) || (mouseY > 159 && mouseY < 339 && mouseX > 682 && mouseX < 875)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// white cap
+	else if(promptNum == 4){
+		if(mouseY > 297 && mouseY < 341 && mouseX > 326 && mouseX < 393) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// her hand 
+	else if(promptNum == 5 || promptNum == 6){
+		if(mouseY > 918 && mouseY < 980 && mouseX > 426 && mouseX < 508) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// oblivious face
+	else if(promptNum == 7){
+		if(mouseY > 354 && mouseY < 427 && mouseX > 447 && mouseX < 552) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// my face
+	else if(promptNum == 8 || promptNum == 20){
+		if(mouseY > 479 && mouseY < 556 && mouseX > 395 && mouseX < 466) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// my eyes
+	else if(promptNum == 9){
+		if(mouseY > 498 && mouseY < 536 && mouseX > 391 && mouseX < 468) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// my mouth
+	else if(promptNum == 10){
+		if(mouseY > 542 && mouseY < 569 && mouseX > 401 && mouseX < 457) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// her
+	else if(promptNum == 11){
+		if(mouseY > 591 && mouseY < 1217 && mouseX > 100 && mouseX < 441) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// oblivious one
+	else if(promptNum == 12){
+		if(mouseY > 287 && mouseY < 1194 && mouseX > 481 && mouseX < 646) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// not oblivious
+	else if(promptNum == 13 || promptNum == 25){
+		if(mouseY > 809 && mouseY < 1211 && mouseX > 760 && mouseX < 1075) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// s mouth
+	else if(promptNum == 14){
+		if(mouseY > 936 && mouseY < 987 && mouseX > 950 && mouseX < 975) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// s hand
+	else if(promptNum == 15){
+		if(mouseY > 1068 && mouseY < 1173 && mouseX > 755 && mouseX < 835) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// guy on phone
+	else if(promptNum == 16){
+		if(mouseY > 354 && mouseY < 970 && mouseX > 609 && mouseX < 782) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// bare legs
+	else if(promptNum == 17){
+		if((mouseY > 526 && mouseY < 593 && mouseX > 87 && mouseX < 129) || (mouseY > 465 && mouseY < 471 && mouseX > 467 && mouseX < 555)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// party tent
+	else if(promptNum == 18){
+		if(mouseY > 161 && mouseY < 320 && mouseX > 18 && mouseX < 246) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// time
+	else if(promptNum == 19){
+		if(mouseY > 50 && mouseY < 200 && mouseX > 10 && mouseX < 130) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// her head
+	else if(promptNum == 21 || promptNum == 24){
+		if(mouseY > 584 && mouseY < 894 && mouseX > 50 && mouseX < 336) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// my body
+	else if(promptNum == 22 || promptNum == 23 || promptNum == 26){
+		if(mouseY > 440 && mouseY < 925 && mouseX > 322 && mouseX < 550) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+}
+
+function swipeCardSeq(promptNum){
+	if (promptNum == 1) {
+		updatePrompt("Click the ear");
+	} else if (promptNum == 2) {
+		updatePrompt("Click a mouse");
+	} else if (promptNum == 3) {
+		updatePrompt("Click breakfast");
+	} else if (promptNum == 4) {
+		updatePrompt("Click the computer");
+	} else if (promptNum == 5) {
+		updatePrompt("Click the one who’s been biking");
+	} else if (promptNum == 6) {
+		updatePrompt("Click the one who’s NOT been biking");
+	} else if (promptNum == 7) {
+		updatePrompt("Click the annoyed frown");
+	} else if (promptNum == 8) {
+		updatePrompt("Click the sad frown");
+	} else if (promptNum == 9) {
+		updatePrompt("I just want human contact");
+	} else if (promptNum == 10) {
+		updatePrompt("I hate bureaucracy");
+	} else if (promptNum == 11) {
+		updatePrompt("knife");
+	} else if (promptNum == 12) {
+		updatePrompt("space between fingers");
+	} else if (promptNum == 13) {
+		updatePrompt("warby parker");
+	} else if (promptNum == 14) {
+		updatePrompt("Click the reflection");
+	} else if (promptNum == 15) {
+		updatePrompt("Click on the right arrow to get to the next level");
+	} 
+}
+
+function swipeCardCoorCheck(promptNum){
+	// ear
+	if(promptNum == 1){
+		image(backgroundImgTwo, 0, 0);
+		if(mouseY > 282 && mouseY < 360 && mouseX > 636 && mouseX < 678) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// a mouse
+	else if(promptNum == 2){
+		if((mouseY > 951 && mouseY < 1005 && mouseX > 123 && mouseX < 174) || (mouseY > 888 && mouseY < 921 && mouseX > 534 && mouseX < 609))  {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// breakfast
+	else if(promptNum == 3){
+		if(mouseY > 1110 && mouseY < 1218 && mouseX > 114 && mouseX < 228) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// computer
+	else if(promptNum == 4){
+		if(mouseY > 564 && mouseY < 990 && mouseX > 21 && mouseX < 868) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// tal - biking one
+		else if(promptNum == 5){
+			if((mouseY > 351 && mouseY < 1221 && mouseX > 651 && mouseX < 1017) || (mouseY > 168 && mouseY < 462 && mouseX > 528 && mouseX < 780)) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// lady - not biking one
+		else if(promptNum == 6){
+			if(mouseY > 480 && mouseY < 690 && mouseX > 537 && mouseX < 639) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// annoyed mouth
+		else if(promptNum == 7){
+			if(mouseY > 441 && mouseY < 462 && mouseX > 569 && mouseX < 590) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// sad mouth
+		else if(promptNum == 8){
+			if(mouseY > 521 && mouseY < 531 && mouseX > 588 && mouseX < 689) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// lady - i just want human contact
+		else if(promptNum == 9){
+			if(mouseY > 480 && mouseY < 690 && mouseX > 537 && mouseX < 639) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// tal - i hate beuracracy
+		else if(promptNum == 10){
+			if((mouseY > 351 && mouseY < 1221 && mouseX > 651 && mouseX < 1017) || (mouseY > 168 && mouseY < 462 && mouseX > 528 && mouseX < 780)) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// knife
+		else if(promptNum == 11){
+			if(mouseY > 992 && mouseY < 1081 && mouseX > 402 && mouseX < 435) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// space between fingers
+		else if(promptNum == 12){
+			if(mouseY > 1178 && mouseY < 1212 && mouseX > 391 && mouseX < 470) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// warby parker
+		else if(promptNum == 13){
+			if(mouseY > 324 && mouseY < 398 && mouseX > 510 && mouseX < 646) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+		// reflection
+		else if(promptNum == 14){
+			if(mouseY > 158 && mouseY < 859 && mouseX > 22 && mouseX < 530) {
+			// touched
+				clickAttempt(1, prompt, page);
+			} else {
+			// not touched	
+				clickAttempt(0, prompt, page);
+			}
+		}
+}
+
+function vibratorSeq(promptNum){
+	if (promptNum == 1){
+		updatePrompt("Click on a closet door");
+	} else if (promptNum == 2) {
+		updatePrompt("Click on the bed frame");
+	} else if (promptNum == 3) {
+		updatePrompt("Click on the toilet paper");
+	} else if (promptNum == 4) {
+		updatePrompt("Click on the orange");
+	} else if (promptNum == 5) {
+		updatePrompt("Click on the pink");
+	} else if (promptNum == 6) {
+		updatePrompt("Click on the loose hair");
+	} else if (promptNum == 7) {
+		updatePrompt("Click on an 18 year old");
+	} else if (promptNum == 8) {
+		updatePrompt("Click on another");
+	} else if (promptNum == 9) {
+		updatePrompt("and another");
+	} else if (promptNum == 10) {
+		updatePrompt("Click on the 18+ item");
+	} else if (promptNum == 11) {
+		updatePrompt("Click on a senior in high school");
+	} else if (promptNum == 12) {
+		updatePrompt("Click on another");
+	} else if (promptNum == 13) {
+		updatePrompt("and another");
+	} else if (promptNum == 14) {
+		updatePrompt("Click on the proud new owner");
+	} else if (promptNum == 15) {
+		updatePrompt("Click on the nails digging into skin");
+	} else if (promptNum == 16) {
+		updatePrompt("Click on the object of four eyes");
+	} else if (promptNum == 17) {
+		updatePrompt("Click on the object of two");
+	} else if (promptNum == 18) {
+		updatePrompt("Click on the most sexually experienced");
+	}  else if (promptNum == 19) {
+		updatePrompt("Click on the least");
+	} else if (promptNum == 20) {
+		updatePrompt("Click on the one who will buzz \n all her hair off a year later");
+	}
+	else if (promptNum == 21) {
+		updatePrompt("Click on the one who will own the same \n 18+ item in blue before the other^s hair is gone");
+	}
+	else if (promptNum == 22) {
+		updatePrompt("Press Enter to move on");
+	}
+}
+
+function vibratorCoorCheck(promptNum){
+	// closet door
+	if(promptNum == 1){
+		if(mouseY > 159 && mouseY < 867 && mouseX > 375 && mouseX < 904) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// bed frame
+	if(promptNum == 2){
+		if((mouseY > 720 && mouseY < 1005 && mouseX > 921 && mouseX < 1027) || (mouseY > 456 && mouseY < 573 && mouseX > 21 && mouseX < 111)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	
+	// toilet paper
+	if(promptNum == 3){
+		if(mouseY > 910 && mouseY < 997 && mouseX > 427 && mouseX < 518) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// on orange
+	if(promptNum == 4){
+		if(mouseY > 755 && mouseY < 1003 && mouseX > 570 && mouseX < 856) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// pink
+	if(promptNum == 5){
+		if((mouseY > 717 && mouseY < 914 && mouseX > 276 && mouseX < 399) || (mouseY > 832 && mouseY < 944 && mouseX > 207 && mouseX < 274)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// loose hair 
+	if(promptNum == 6){
+		if(mouseY > 399 && mouseY < 584 && mouseX > 816 && mouseX < 984) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// 18 yr old - mich, lil, sim
+	if(promptNum == 7 || promptNum == 8 || promptNum == 9 || promptNum == 11 || promptNum == 12 || promptNum == 13){
+		if((mouseY > 571 && mouseY < 988 && mouseX > 25 && mouseX < 257) || (mouseY > 428 && mouseY < 774 && mouseX > 194 && mouseX < 395) || (mouseY > 402 && mouseY < 867 && mouseX > 797 && mouseX < 1023)){
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// lil: 14 - proud owner, 20 - buzz all hair off
+	if(promptNum == 14 || promptNum == 20){
+		if(mouseY > 428 && mouseY < 774 && mouseX > 194 && mouseX < 395) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// nails digging into skin on me
+	if(promptNum == 15){
+		if(mouseY > 735 && mouseY < 763 && mouseX > 777 && mouseX < 810) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// me: 16- object of four eyes, 19 - least experienced, 21- will own the same thing in blue 
+	if(promptNum == 16 || promptNum == 19 || promptNum == 21){
+		if(mouseY > 402 && mouseY < 867 && mouseX > 797 && mouseX < 1023) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// vibrator: 10 - 18+ item, 17 - object of two eyes
+	if(promptNum == 10 || promptNum == 17){
+		if(mouseY > 430 && mouseY < 508 && mouseX > 311 && mouseX < 336) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+
+	// mich - most experienced
+	if(promptNum == 18){
+		if(mouseY > 571 && mouseY < 988 && mouseX > 25 && mouseX < 257) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+}
+
+function atPartySeq(promptNum){
+	if (promptNum == 1){
+		updatePrompt("Click on the polka dotted wall");
+	} else if (promptNum == 2){
+		updatePrompt("Click on the light source");
+	} else if (promptNum == 3){
+		updatePrompt("Click on the party goer \n in the black cardigan");
+	} else if (promptNum == 4){
+		updatePrompt("Click on the party goer \n standing next to them");
+	}else if (promptNum == 5){
+		updatePrompt("Click on the casually slung jacket");
+	}else if (promptNum == 6){
+		updatePrompt("Click on the casually slung arm");
+	}else if (promptNum == 7){
+		updatePrompt("Click on the 18 year old");
+	}else if (promptNum == 8){
+		updatePrompt("Click on another ");
+	}else if (promptNum == 9){
+		updatePrompt("and another");
+	}else if (promptNum == 10){
+		updatePrompt("Click on the freshman in college");
+	}else if (promptNum == 11){
+		updatePrompt("Click on another");
+	}else if (promptNum == 12){
+		updatePrompt("and another");
+	} else if (promptNum == 13){
+		updatePrompt("Click on the one wearing hoops");
+	} else if (promptNum == 14){
+		updatePrompt("Click on the one wearing a see through shirt");
+	} else if (promptNum == 15){
+		updatePrompt("Click on whose house theyll sleep at tonight");
+	} else if (promptNum == 16){
+		updatePrompt("Click on the most sexually experienced one");
+	} else if (promptNum == 17){
+		updatePrompt("Click on the least");
+	} else if (promptNum == 18){
+		updatePrompt("Click on the owner of a new blue 18+ item");
+	} else if (promptNum == 19){
+		updatePrompt("Press Enter to move on");
+	}
+}
+
+function atPartyCoorCheck(promptNum){
+	// polka dotted wall
+	if(promptNum == 1){
+		if((mouseY > 335 && mouseY < 609 && mouseX > 21 && mouseX < 297) || (mouseY > 376 && mouseY < 544 && mouseX > 852 && mouseX < 1099)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// light source
+	if(promptNum == 2){
+		if(mouseY > 230 && mouseY < 272 && mouseX > 1004 && mouseX < 1099) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// background person 1 : 3 - black cardigan, 
+	if(promptNum == 3){
+		if(mouseY > 414 && mouseY < 696 && mouseX > 200 && mouseX < 329) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// bakcground person 2: 4 - standing to the left
+	if(promptNum == 4){
+		if(mouseY > 453 && mouseY < 876 && mouseX > 21 && mouseX < 165) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// slung jacket 
+	if(promptNum == 5){
+		if((mouseY > 505 && mouseY < 805 && mouseX > 254 && mouseX < 424) || (mouseY > 674 && mouseY < 875 && mouseX > 130 && mouseX < 254)) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// slung arm
+	if(promptNum == 6){
+		if(mouseY > 568 && mouseY < 876 && mouseX > 810 && mouseX < 1099) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// 18 yo: me, background person 1, background person 2
+	if(promptNum == 7 || promptNum == 8 || promptNum == 9 || promptNum == 10 || promptNum == 11 || promptNum == 12){
+		if((mouseY > 350 && mouseY < 876 && mouseX > 593 && mouseX < 1099) || (mouseY > 414 && mouseY < 696 && mouseX > 200 && mouseX < 329) || (mouseY > 453 && mouseY < 876 && mouseX > 21 && mouseX < 165))  {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// me: 13 - hoops, 17 - least sexually experienced, 18 - owner of new blue item
+	if(promptNum == 13 || promptNum == 17 || promptNum == 18){
+		if(mouseY > 350 && mouseY < 876 && mouseX > 593 && mouseX < 1099) {
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+	// her: 14 - see through shirt, 15 - whose house they'll be sleeping at
+	if(promptNum == 14 || promptNum == 15 || promptNum == 16){
+		if((mouseY > 500 && mouseY < 876 && mouseX > 254 && mouseX < 585) || (mouseY > 173 && mouseY < 500 && mouseX > 412 && mouseX < 585) || (mouseY > 173 && mouseY < 384 && mouseX > 580 && mouseX < 750)){
+		// touched
+			clickAttempt(1, prompt, page);
+		} else {
+		// not touched	
+			clickAttempt(0, prompt, page);
+		}
+	}
+}
+
+function prompter(promptNum){
+	startMilli = millis();
+	fill(1, 163, 176);
+	textSize(30);
+	// first page of game
+	if (page == 2){
+		vibratorSeq(promptNum);
+	} else if (page == 3){
+		atPartySeq(promptNum);
+	} else if (page == 4){
+		springWeekendSeq(promptNum);
+	}
+}
+
+function keyReleased(){
+	// triggers begin game
+	if (keyCode == ENTER){
+		if (page == 0){
+			showGame();
+			prompt = 1;
+			prompter(prompt);
+		} else if (page == 2){
+			if (prompt >= 22){
+				// go to next page
+				page++;
+				//reset prompt
+				prompt = 1;
+				/*
+				// change background image
+				background(0);
+				image(backgroundImgTwo, 0, 0);
+				*/
+				background(0);
+				backgroundSprite.position.x = atPartyAnim.getWidth()/2 + 21;
+				backgroundSprite.position.y = atPartyAnim.getHeight()/2 + padding;
+				backgroundSprite.changeAnimation("atParty");
+				// call first prompt
+				prompter(prompt);
+			}
+		} else if (page == 3){
+			if (prompt >= 19){
+				// go to next prompt
+				page++;
+				// reset prompt
+				prompt = 1;
+				// change background image
+				background(0);
+				backgroundSprite.position.x = springWeekendAnim.getWidth()/2;
+				backgroundSprite.position.y = springWeekendAnim.getHeight()/2 + padding;
+				backgroundSprite.changeAnimation("springWeekend");
+				//image(backgroundImgThree, 0, 0);
+				// call first prompt
+				prompter(prompt);
+			}
+		} else if (page == 4){
+			if (prompt >= 27){
+				page++;
+				prompt = 1;
+				background(0);
+				text("This story took you " + score + "seconds.");
+			}
+		} 
+	} 
+}
+
+// sucess: 0 - failure, 1 - sucess, 2 - time up
+function clickAttempt(sucess, promptNum, page){
+	//&& clickSucess == -1
+	if (page > 0 ){
+		//prompt = promptNum + 1;
+		//sucess
+		if (sucess == 1){
+			clickSucess = 1;
+			score = score + scoreAdd;
+			scoreAdd = 0;
+			resultSprite.visible = true;
+			fill(0);
+			rect(springWeekendAnim.getWidth() - springWeekendAnim.getWidth()/8, 50, sucessImg.width, sucessImg.height);
+			resultSprite.changeImage("sucess");
+			saveDrawCounter = 0;
+			//go to the next prompt
+			prompt++;
+			prompter(prompt);
+		} 
+		// failure
+		else if (sucess == 0) {
+			clickSucess = 0;
+			resultSprite.visible = true;
+			fill(0);
+			rect(springWeekendAnim.getWidth() - springWeekendAnim.getWidth()/8, 50, sucessImg.width, sucessImg.height);
+			resultSprite.changeImage("fail");
+			saveDrawCounter = 0;
+		}
+		// time is up
+		else if (sucess == 2){
+			clickSucess = 2;
+			score = score + scoreAdd;
+			scoreAdd = 0;
+			resultSprite.visible = true;
+			fill(0);
+			rect(springWeekendAnim.getWidth() - springWeekendAnim.getWidth()/8, 50, sucessImg.width, sucessImg.height);
+			resultSprite.changeImage("timeUp");
+			saveDrawCounter = 0;
+			//go to the next prompt
+			prompt++;
+			prompter(prompt);
+			
+		}
+	}
+}
+
+function coorChecker(promptNum){
+	if (page == 2){
+		vibratorCoorCheck(prompt);
+	} else if (page == 3){
+		atPartyCoorCheck(prompt);
+	} else if (page == 4){
+		springWeekendCoorCheck(prompt);
+	}
+}
+
+function mousePressed(){
+	clicked = 1;
+	print("x coor: " + mouseX);
+	print("y coor: " + mouseY);
+	coorChecker(prompt);
+}
+
+function intro(){
+		fill(1, 1, 176);
+		background(0);
+		fill(1, 163, 176);
+		textFont("Ramaraja");
+		//textFont("Josefin");
+		textSize(60);
+		text("There^s a story beyond this point. \n \n \n \t\t\t\t Press Enter to find it.", windowWidth/3, windowHeight/3);
+		// TO DO: put background img here instead img()
+	
+}
+
+
+
+</script>
+  </head>
+  <body style="margin: 0px">
+  </body>
+</html>
